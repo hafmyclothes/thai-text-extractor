@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ไทยอักษร · Thai Text Extractor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --ink:      #1a1410;
+  --paper:    #f7f3ee;
+  --cream:    #ede8df;
+  --gold:     #c8a96e;
+  --gold-lt:  #e8d5a8;
+  --rust:     #c05a2a;
+  --teal:     #2a7a7a;
+  --teal-lt:  #e0f0f0;
+  --border:   #d4c9b8;
+  --muted:    #7a6e60;
+  --shadow:   rgba(26,20,16,0.12);
+  --r:        6px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Sarabun', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Background texture ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 39px, var(--border) 39px, var(--border) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, var(--border) 39px, var(--border) 40px);
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Header ── */
+header {
+  position: relative;
+  z-index: 10;
+  padding: 0 40px;
+  border-bottom: 2px solid var(--ink);
+  background: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 72px;
+}
+.logo {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.logo-th {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  color: var(--gold);
+  letter-spacing: 0.02em;
+}
+.logo-en {
+  font-size: 11px;
+  color: var(--gold-lt);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  opacity: 0.7;
+}
+.header-badges {
+  display: flex;
+  gap: 8px;
+}
+.badge {
+  padding: 3px 10px;
+  border: 1px solid var(--gold);
+  border-radius: 2px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+/* ── Main layout ── */
+main {
+  position: relative;
+  z-index: 1;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 48px 40px;
+}
+
+/* ── Hero ── */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+  margin-bottom: 56px;
+}
+.hero-left h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 48px;
+  line-height: 1.15;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+.hero-left h1 em {
+  font-style: italic;
+  color: var(--rust);
+}
+.hero-left p {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--muted);
+  max-width: 420px;
+}
+.feature-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.pill-teal { background: var(--teal-lt); color: var(--teal); }
+.pill-gold { background: #f5eddb; color: #8a6020; }
+.pill-rust { background: #faeae0; color: var(--rust); }
+
+/* ── Upload Card ── */
+.upload-card {
+  background: white;
+  border: 2px solid var(--ink);
+  border-radius: var(--r);
+  overflow: hidden;
+  box-shadow: 6px 6px 0 var(--ink);
+}
+.upload-card-header {
+  background: var(--ink);
+  color: var(--gold);
+  padding: 12px 20px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.upload-zone {
+  padding: 40px 32px;
+  border: 2.5px dashed var(--border);
+  margin: 24px;
+  border-radius: 4px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--teal);
+  background: var(--teal-lt);
+}
+.upload-zone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.upload-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 16px;
+  background: var(--cream);
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+.upload-zone p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+.upload-zone strong { color: var(--ink); }
+.file-types {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--border);
+  letter-spacing: 0.08em;
+  font-family: 'JetBrains Mono', monospace;
+}
+.selected-file {
+  display: none;
+  margin: 0 24px;
+  padding: 12px 16px;
+  background: var(--teal-lt);
+  border: 1px solid var(--teal);
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--teal);
+  align-items: center;
+  gap: 10px;
+}
+.selected-file.show { display: flex; }
+.btn-extract {
+  display: block;
+  width: calc(100% - 48px);
+  margin: 16px 24px 24px;
+  padding: 14px;
+  background: var(--rust);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-family: 'Sarabun', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-extract:hover { background: #a04020; transform: translateY(-1px); }
+.btn-extract:disabled { background: var(--border); cursor: not-allowed; transform: none; }
+.btn-extract .spinner {
+  display: none;
+  width: 18px; height: 18px;
+  border: 2.5px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+}
+.btn-extract.loading .spinner { display: block; }
+@keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+
+/* ── Progress bar ── */
+.progress-wrap {
+  display: none;
+  margin: 0 24px 16px;
+  background: var(--cream);
+  border-radius: 100px;
+  height: 6px;
+  overflow: hidden;
+}
+.progress-wrap.show { display: block; }
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--teal), var(--gold));
+  border-radius: 100px;
+  width: 0%;
+  transition: width 0.4s ease;
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+  100% { filter: brightness(1); }
+}
+
+/* ── Results Section ── */
+.results {
+  display: none;
+  animation: fadeUp 0.5s ease;
+}
+.results.show { display: block; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.section-rule {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.section-rule h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  white-space: nowrap;
+}
+.rule-line { flex: 1; height: 2px; background: var(--border); }
+
+/* ── Stats Row ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.stat-card {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px 18px;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 4px; height: 100%;
+}
+.stat-card.s-teal::before { background: var(--teal); }
+.stat-card.s-gold::before { background: var(--gold); }
+.stat-card.s-rust::before { background: var(--rust); }
+.stat-card.s-ink::before { background: var(--ink); }
+.stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ── Two-col panels ── */
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+.panel {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.panel-head {
+  padding: 12px 20px;
+  border-bottom: 1.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.panel-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-body {
+  padding: 16px 20px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+.panel-body::-webkit-scrollbar { width: 4px; }
+.panel-body::-webkit-scrollbar-track { background: var(--cream); }
+.panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Segment list */
+.seg-item {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--cream);
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 10px;
+  align-items: start;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.seg-item:last-child { border-bottom: none; }
+.seg-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--border);
+  padding-top: 3px;
+  text-align: right;
+}
+.seg-text { color: var(--ink); }
+
+/* Glossary table */
+.glo-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.glo-table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  border-bottom: 2px solid var(--border);
+  font-weight: 700;
+}
+.glo-table td { padding: 9px 10px; border-bottom: 1px solid var(--cream); }
+.glo-table tr:last-child td { border-bottom: none; }
+.freq-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.freq-fill {
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold), var(--rust));
+  border-radius: 2px;
+  min-width: 2px;
+}
+.freq-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* Raw text preview */
+.raw-preview {
+  background: #1a1410;
+  color: #e8d5a8;
+  border-radius: var(--r);
+  padding: 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  max-height: 280px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 24px;
+}
+.raw-preview::-webkit-scrollbar { width: 4px; }
+.raw-preview::-webkit-scrollbar-thumb { background: #3a3028; border-radius: 2px; }
+
+/* Download buttons */
+.download-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+}
+.btn-dl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-family: 'Sarabun', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+  transition: all 0.2s;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.btn-dl:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+.btn-dl:active { transform: translate(0, 0); box-shadow: 2px 2px 0 var(--ink); }
+.btn-dl .dl-icon {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+.btn-dl.dl-seg .dl-icon { background: var(--teal-lt); }
+.btn-dl.dl-glo .dl-icon { background: #f5eddb; }
+
+/* Error alert */
+.alert-error {
+  display: none;
+  padding: 14px 18px;
+  background: #fdf0ec;
+  border: 1.5px solid var(--rust);
+  border-radius: var(--r);
+  color: var(--rust);
+  font-size: 14px;
+  margin-bottom: 20px;
+  align-items: center;
+  gap: 10px;
+}
+.alert-error.show { display: flex; }
+
+/* Status dot */
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #4caf50;
+  display: inline-block;
+  margin-right: 6px;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Footer ── */
+footer {
+  border-top: 2px solid var(--ink);
+  background: var(--ink);
+  color: var(--muted);
+  font-size: 12px;
+  padding: 20px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  letter-spacing: 0.06em;
+}
+footer span { color: var(--gold); }
+
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .panels { grid-template-columns: 1fr; }
+  header { padding: 0 20px; }
+  main { padding: 32px 20px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-th">ไทยอักษร</span>
+    <span class="logo-en">Thai Text Extractor</span>
+  </div>
+  <div class="header-badges">
+    <span class="badge"><span class="status-dot"></span>Live</span>
+    <span class="badge">CAT-Ready</span>
+    <span class="badge">PyThaiNLP</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-left">
+      <h1>สกัดข้อความ<br/><em>ภาษาไทย</em><br/>อย่างแม่นยำ</h1>
+      <p>ระบบ OCR สำหรับนักแปลมืออาชีพ — ดึงข้อความจาก PDF, PNG, JPG พร้อม normalizer ภาษาไทย สระไม่ลอย ส่งออกเป็น CSV สำหรับ CAT Tools ทันที</p>
+      <div class="feature-pills">
+        <span class="pill pill-teal">🔤 Thai NLP Normalization</span>
+        <span class="pill pill-gold">📚 Glossary Extraction</span>
+        <span class="pill pill-rust">📄 CAT-Ready CSV</span>
+        <span class="pill pill-teal">🖼️ OCR (PDF/IMG)</span>
+      </div>
+    </div>
+
+    <!-- Upload Card -->
+    <div class="upload-card">
+      <div class="upload-card-header">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M7 1v8M4 4l3-3 3 3M1 10v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        อัปโหลดไฟล์
+      </div>
+
+      <div class="upload-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg,.webp,.tiff,.bmp"/>
+        <div class="upload-icon">📁</div>
+        <p><strong>คลิกเพื่อเลือกไฟล์</strong> หรือลากมาวางที่นี่</p>
+        <p class="file-types">PDF · PNG · JPG · WEBP · TIFF · BMP</p>
+      </div>
+
+      <div class="selected-file" id="selectedFile">
+        <span>📄</span>
+        <span id="selectedFileName">—</span>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <div class="alert-error" id="alertError">
+        <span>⚠️</span>
+        <span id="alertMsg">เกิดข้อผิดพลาด</span>
+      </div>
+
+      <button class="btn-extract" id="btnExtract" onclick="doExtract()">
+        ⚡ สกัดข้อความ
+        <div class="spinner"></div>
+      </button>
+    </div>
+  </section>
+
+  <!-- Results -->
+  <section class="results" id="results">
+    <div class="section-rule">
+      <h2>ผลลัพธ์</h2>
+      <div class="rule-line"></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card s-teal">
+        <div class="stat-label">📝 Segments</div>
+        <div class="stat-value" id="statSegs">—</div>
+      </div>
+      <div class="stat-card s-gold">
+        <div class="stat-label">📚 Glossary Terms</div>
+        <div class="stat-value" id="statGlo">—</div>
+      </div>
+      <div class="stat-card s-rust">
+        <div class="stat-label">🔤 Characters</div>
+        <div class="stat-value" id="statChars">—</div>
+      </div>
+      <div class="stat-card s-ink">
+        <div class="stat-label">📄 File</div>
+        <div class="stat-value" id="statFile" style="font-size:14px;padding-top:8px;">—</div>
+      </div>
+    </div>
+
+    <!-- Raw preview -->
+    <div class="raw-preview" id="rawPreview"></div>
+
+    <!-- Download buttons -->
+    <div class="download-row">
+      <a class="btn-dl dl-seg" id="dlSegs" href="#" download>
+        <div class="dl-icon">⬇️</div>
+        <div>
+          <div style="font-size:12px;font-weight:400;color:var(--muted)">CAT Tool Import</div>
+          segments.csv
+        </div>
+      </a>
+      <a class="btn-dl dl-glo" id="dlGlo" href="#" download>
+        <div class="dl-icon">⬇️</div>
+        <div>
+          <div style="font-size:12px;font-weight:400;color:var(--muted)">Term Base</div>
+          glossary.csv
+        </div>
+      </a>
+    </div>
+
+    <!-- Panels -->
+    <div class="panels">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title" style="color:var(--teal)">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 5h6M4 7.5h6M4 10h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Segments Preview
+          </span>
+          <span id="segCount" style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace"></span>
+        </div>
+        <div class="panel-body" id="segList"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title" style="color:#8a6020">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1L9 5l4 .5-3 2.8.7 4L7 10 3.3 12.3 4 8.3 1 5.5 5 5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            Glossary (คำซ้ำบ่อย)
+          </span>
+          <span id="gloCount" style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace"></span>
+        </div>
+        <div class="panel-body">
+          <table class="glo-table">
+            <thead>
+              <tr>
+                <th>คำศัพท์</th>
+                <th>ความถี่</th>
+                <th>คำแปล</th>
+              </tr>
+            </thead>
+            <tbody id="gloBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div>ไทยอักษร · Thai Text Extractor <span>v1.0</span></div>
+  <div>Powered by <span>PyThaiNLP</span> · <span>Tesseract OCR</span> · <span>PyMuPDF</span></div>
+</footer>
+
+<script>
+let sessionId = null;
+
+// Drag & drop
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    document.getElementById('fileInput').files = e.dataTransfer.files;
+    showSelected(file.name);
+  }
+});
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (f) showSelected(f.name);
+});
+
+function showSelected(name) {
+  document.getElementById('selectedFileName').textContent = name;
+  document.getElementById('selectedFile').classList.add('show');
+}
+
+function setProgress(pct) {
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+async function doExtract() {
+  const input = document.getElementById('fileInput');
+  if (!input.files.length) { showError('กรุณาเลือกไฟล์ก่อน'); return; }
+
+  const btn = document.getElementById('btnExtract');
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.querySelector('.spinner').style.display = 'block';
+  hideError();
+  document.getElementById('results').classList.remove('show');
+
+  const progressWrap = document.getElementById('progressWrap');
+  progressWrap.classList.add('show');
+
+  // Fake progress animation
+  setProgress(10);
+  await delay(200);
+  setProgress(30);
+
+  const formData = new FormData();
+  formData.append('file', input.files[0]);
+
+  try {
+    setProgress(50);
+    const res = await fetch('/api/extract', { method: 'POST', body: formData });
+    setProgress(80);
+    const data = await res.json();
+    setProgress(100);
+    await delay(300);
+
+    if (!res.ok) throw new Error(data.error || 'เกิดข้อผิดพลาด');
+
+    sessionId = data.session_id;
+    renderResults(data);
+
+  } catch(err) {
+    showError(err.message);
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.querySelector('.spinner').style.display = 'none';
+    await delay(600);
+    progressWrap.classList.remove('show');
+    setProgress(0);
+  }
+}
+
+function renderResults(data) {
+  document.getElementById('statSegs').textContent = data.segment_count.toLocaleString();
+  document.getElementById('statGlo').textContent = data.glossary.length.toLocaleString();
+  document.getElementById('statChars').textContent = data.raw_preview.length.toLocaleString();
+  document.getElementById('statFile').textContent = data.filename;
+
+  // Raw preview
+  document.getElementById('rawPreview').textContent = data.raw_preview;
+
+  // Download links
+  document.getElementById('dlSegs').href = `/api/download/segments/${data.session_id}`;
+  document.getElementById('dlGlo').href  = `/api/download/glossary/${data.session_id}`;
+
+  // Segments
+  const segList = document.getElementById('segList');
+  const shown = Math.min(data.segments.length, 80);
+  document.getElementById('segCount').textContent = `แสดง ${shown}/${data.segment_count}`;
+  segList.innerHTML = data.segments.slice(0, 80).map((s, i) =>
+    `<div class="seg-item">
+      <span class="seg-num">${String(i+1).padStart(3,'0')}</span>
+      <span class="seg-text">${esc(s)}</span>
+    </div>`
+  ).join('');
+
+  // Glossary
+  const maxFreq = data.glossary[0]?.frequency || 1;
+  document.getElementById('gloCount').textContent = `${data.glossary.length} คำ`;
+  document.getElementById('gloBody').innerHTML = data.glossary.map(g =>
+    `<tr>
+      <td>${esc(g.term)}</td>
+      <td>
+        <div class="freq-bar">
+          <div class="freq-fill" style="width:${Math.round((g.frequency/maxFreq)*80)}px"></div>
+          <span class="freq-num">${g.frequency}×</span>
+        </div>
+      </td>
+      <td style="color:var(--muted);font-size:12px;font-style:italic">—</td>
+    </tr>`
+  ).join('');
+
+  document.getElementById('results').classList.add('show');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showError(msg) {
+  const el = document.getElementById('alertError');
+  document.getElementById('alertMsg').textContent = msg;
+  el.classList.add('show');
+}
+function hideError() {
+  document.getElementById('alertError').classList.remove('show');
+}
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
