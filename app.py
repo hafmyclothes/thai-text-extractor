@@ -151,8 +151,11 @@ def glossary_to_csv(glossary: list[dict]) -> str:
 
 @app.route("/")
 def index():
-    with open("templates/index.html", encoding="utf-8") as f:
-        return f.read()
+    try:
+        with open("templates/index.html", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        return jsonify({"error": "index.html not found"}), 404
 
 
 @app.route("/api/extract", methods=["POST"])
@@ -161,9 +164,15 @@ def extract():
         return jsonify({"error": "No file uploaded"}), 400
 
     file = request.files["file"]
-    filename = file.filename or "document"
+    if not file.filename:
+        return jsonify({"error": "No filename provided"}), 400
+    
+    filename = file.filename
     ext = Path(filename).suffix.lower()
     file_bytes = file.read()
+    
+    if not file_bytes:
+        return jsonify({"error": "Empty file"}), 400
 
     try:
         if ext == ".pdf":
@@ -173,8 +182,19 @@ def extract():
                 "error": f"❌ This version supports PDF only. For PNG/JPG, install Google Cloud Vision API. See CLOUD_SETUP.md"
             }), 400
 
+        if not raw_text.strip():
+            return jsonify({
+                "error": "No text found in PDF. Try uploading a text-based PDF (not scanned)."
+            }), 400
+
         normalized = normalize_thai_text(raw_text)
         segments = split_into_segments(normalized)
+        
+        if not segments:
+            return jsonify({
+                "error": "No Thai text segments found after processing."
+            }), 400
+        
         glossary = extract_glossary(segments)
 
         # Save files
@@ -201,7 +221,7 @@ def extract():
         })
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"Processing error: {str(e)}"}), 500
 
 
 @app.route("/api/download/segments/<session_id>")
@@ -233,4 +253,5 @@ def health():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=False, host="0.0.0.0", port=port)
